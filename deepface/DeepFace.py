@@ -14,7 +14,7 @@ import pickle
 
 from deepface.basemodels import VGGFace, OpenFace, Facenet, Facenet512, FbDeepFace, DeepID, DlibWrapper, ArcFace, Boosting
 from deepface.extendedmodels import Age, Gender, Race, Emotion
-from deepface.commons import functions, realtime, distance as dst
+from deepface.commons import functions, streaming, distance as dst
 
 import tensorflow as tf
 tf_version = int(tf.__version__.split(".")[0])
@@ -765,7 +765,7 @@ def represent(img_path, model_name = 'VGG-Face', model = None, enforce_detection
 
 def stream(db_path = '', model_name ='VGG-Face', detector_backend = 'opencv', distance_metric = 'cosine', enable_face_analysis = True, source = 0, time_threshold = 5, frame_threshold = 5):
 
-	"""
+    """
 	This function applies real time face recognition and facial attribute analysis
 
 	Parameters:
@@ -784,17 +784,16 @@ def stream(db_path = '', model_name ='VGG-Face', detector_backend = 'opencv', di
 		time_threshold (int): how many second analyzed image will be displayed
 
 		frame_threshold (int): how many frames required to focus on face
+        """
+    if time_threshold < 1:
+        raise ValueError("time_threshold must be greater than the value 1 but you passed "+str(time_threshold))
 
-	"""
+    if frame_threshold < 1:
+        raise ValueError("frame_threshold must be greater than the value 1 but you passed "+str(frame_threshold))
 
-	if time_threshold < 1:
-		raise ValueError("time_threshold must be greater than the value 1 but you passed "+str(time_threshold))
-
-	if frame_threshold < 1:
-		raise ValueError("frame_threshold must be greater than the value 1 but you passed "+str(frame_threshold))
-
-	realtime.analysis(db_path, model_name, detector_backend, distance_metric, enable_face_analysis
+    (apparent_age,gender_prediction,race_prediction) = streaming.analysis(db_path, model_name, detector_backend, distance_metric, enable_face_analysis
 						, source = source, time_threshold = time_threshold, frame_threshold = frame_threshold)
+    print(f"Age: {apparent_age},Gender: {gender_prediction}, Race: {race_prediction}")
 
 def detectFace(img_path, detector_backend = 'opencv', enforce_detection = True, align = True):
 
