@@ -43,17 +43,19 @@ def initialize_input(img1_path, img2_path = None):
 
 	return img_list, bulkProcess
 
-def initializeFolder():
-
-	home = str(Path.home())
+def initialize_folder():
+	home = get_deepface_home()
 
 	if not os.path.exists(home+"/.deepface"):
-		os.mkdir(home+"/.deepface")
-		print("Directory ",home,"/.deepface created")
+		os.makedirs(home+"/.deepface")
+		print("Directory ", home, "/.deepface created")
 
 	if not os.path.exists(home+"/.deepface/weights"):
-		os.mkdir(home+"/.deepface/weights")
-		print("Directory ",home,"/.deepface/weights created")
+		os.makedirs(home+"/.deepface/weights")
+		print("Directory ", home, "/.deepface/weights created")
+
+def get_deepface_home():
+	return str(os.getenv('DEEPFACE_HOME', default=Path.home()))
 
 def loadBase64Img(uri):
    encoded_data = uri.split(',')[1]
@@ -88,12 +90,22 @@ def detect_face(img, detector_backend = 'opencv', grayscale = False, enforce_det
 
 	img_region = [0, 0, img.shape[0], img.shape[1]]
 
+	#----------------------------------------------
+	#people would like to skip detection and alignment if they already have pre-processed images
+	if detector_backend == 'skip':
+		return img, img_region
+
+	#----------------------------------------------
+
 	#detector stored in a global variable in FaceDetector object.
 	#this call should be completed very fast because it will return found in memory
 	#it will not build face detector model in each call (consider for loops)
 	face_detector = FaceDetector.build_model(detector_backend)
 
-	detected_face, img_region = FaceDetector.detect_face(face_detector, detector_backend, img, align)
+	try:
+		detected_face, img_region = FaceDetector.detect_face(face_detector, detector_backend, img, align)
+	except: #if detected face shape is (0, 0) and alignment cannot be performed, this block will be run
+		detected_face = None
 
 	if (isinstance(detected_face, np.ndarray)):
 		return detected_face, img_region
